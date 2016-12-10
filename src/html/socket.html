@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+    <meta charset="UTF-8">
+    <title>Socket Test</title>
+</head>
+<script type="text/javascript">
+    var socket;
+    socket = io.connect('http://192.168.2.92:3000');
+    socket.on('inputValue', function (response) {
+        console.log(response.value);
+    });
+    function sendData() {
+        var inputElement = document.getElementById('inputValue');
+        console.log('Sending: ' + inputElement.value);
+        var data = {
+            value: inputElement.value
+        };
+        socket.emit('inputData', data);
+    }
+</script>
+<input type="text" id="inputValue" />
+<button onclick="sendData()" >Send</button>
+</body>
+</html>
