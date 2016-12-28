@@ -3,6 +3,5 @@
     "sourceMap": true,
     "outDir": "./dist/scripts"
   },
-  "exclude": ["node_modules"],
-  "files": ["./typings/index.d.ts"]
+  "exclude": ["node_modules"]
 }

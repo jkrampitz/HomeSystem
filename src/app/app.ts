@@ -1,19 +1,13 @@
-/**
- * Created by Joerg on 19.11.2016.
- */
-
-///<reference path="../../typings/index.d.ts"/>
-
-'use strict';
-
 import * as express from "express";
 import * as path  from "path";
-import userRouter = require("./routes/user");
-var socket = require('socket.io');
-
+import * as socket from 'socket.io';
+import {Devices} from "./devices.enum";
+import {SocketData} from "./SocketData";
+import * as ws from 'ws';
 
 class Server {
     public app: express.Application;
+    private wss: ws.Server;
 
     public static bootstrap(): Server {
         return new Server();
@@ -24,7 +18,7 @@ class Server {
         this.mapStaticFolders();
         this.mapDynamicViews();
 
-        var server = this.app.listen(3000, function () {
+        const server = this.app.listen(3000, function () {
             console.log('Example app listening on port 3000!');
         });
         this.startSocket(server);
@@ -37,34 +31,51 @@ class Server {
     private mapDynamicViews() {
         this.app.set("view engine", "pug");
         this.app.set('views', path.join(__dirname, '/../views'));
-        this.app.use('/user', userRouter);
         this.app.get('/', function (req, res) {
             res.render('index',
-                { title: 'Pug Template Demo',
-                message:'This is dummy paragraph.',
-                players: ['Lukas', 'Tom', 'Fabian']}
-                );
+                {
+                    title: 'Pug Template Demo',
+                    message: 'This is dummy paragraph.',
+                    players: ['Lukas', 'Tom', 'Fabian']
+                }
+            );
         });
     }
 
     private startSocket(server) {
-        var io = socket(server);
-        io.sockets.on('connection', function (connection) {
-            console.log('New socket connection: ' + connection.id);
+        this.wss = new ws.Server({server: server});
 
-            connection.on('inputData', function(data){
-                console.log('recieved: ' + data.value);
-                var response = {
-                    value: 'Data recieved'
-                };
-                connection.emit('inputValue', response);
-                // connection.broadcast.emit('inputValue', response); //sendet an andere clients
+        this.wss.on('connection', (ws) => {
+            ws.on('message', (message) => {
+                console.log('received: %s', message);
 
+                switch (message.method) {
+                    default:
+                        this.wss.clients.forEach(c => c.send(message));
+                        break;
+                }
             });
         });
+
+        // const io = socket(server);
+        // io.sockets.on('connection', (connection) => {
+        //     console.log('New socket connection: ' + connection.id);
+        //     this.connections[connection.id] = connection;
+        //
+        //     connection.on(Devices.Move.toString(), (data: SocketData) => {
+        //         console.log('received message: ', data, data.method, data.data);
+        //         switch (data.method) {
+        //             default:
+        //                 this.sendToAll(Devices.Light, data);
+        //                 break;
+        //         }
+        //     });
+        //
+        //     connection.on('disconnect', () => {
+        //         delete this.connections[connection.id];
+        //     })
+        // });
     }
-
-
 }
 
 Server.bootstrap();
